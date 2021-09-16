@@ -3,6 +3,9 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use log::{info, error};
 
 // #[tokio::main]
+/// Starts the server that listens to the lead node, for updates
+/// and syncronisation code. This does not scan for lead nodes,
+/// as that happens before this function should be run.
 pub async fn powered_dispatch(bind_on: String) -> Result<(), Box<dyn std::error::Error>> {
     let listener = TcpListener::bind(&bind_on).await?;
     info!("Binding on {}", bind_on);

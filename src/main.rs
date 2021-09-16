@@ -1,28 +1,69 @@
+pub mod registration;
+pub mod checkpoint;
+pub mod config;
 pub mod dispatch;
 
-use clap::{Arg, App, SubCommand};
+use clap::{Arg, App, AppSettings};
+use log::{trace, info};
+
+use std::path::PathBuf;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
+async fn main() {
+    env_logger::builder().filter_level(log::LevelFilter::Trace).init();
 
     let matches = App::new("SLaDOS")
         .version("1.0.0")
         .author("Milo Banks <milobanks@rowlandhall.org>, Eli Hatton <elihatton@rowlandhall.org>")
         .about("Standardised Logging and Decentralized student-Observation System.")
-        .arg(Arg::with_name("config")
+        .setting(AppSettings::SubcommandRequired)
+        .arg(Arg::new("config")
+            .about("Where to find the configuration file.")
             .long("config")
             .value_name("FILE")
-            .help("Sets a custom config file")
+            .default_value("/etc/slados.d/config.toml")
             .takes_value(true))
-        .subcommand(SubCommand::with_name("kiosk")
+        .subcommand(App::new("kiosk")
             .about("Run as a kiosk. Pretty much the only option.")
-            .subcommand(SubCommand::with_name("registration")
+            .setting(AppSettings::SubcommandRequired)
+            .subcommand(App::new("registration")
                 .about("A registration kiosk."))
-            .subcommand(SubCommand::with_name("checkpoint")
+            .subcommand(App::new("checkpoint")
                 .about("A kiosk to keep track of attendance. A checkpoint."))
             )
         .get_matches();
 
-    dispatch::powered_dispatch("127.0.0.1:8000".to_owned()).await
-} 
+    info!("Reading configuration file");
+    let config = config::parse_config_file(PathBuf::from(matches.value_of("config").unwrap())).expect("woops");
+
+    trace!("Configuration data: {:?}", config);
+
+    if ! config.enabled {
+        info!("Stopping the entire show, because you wanted us to. Don't you apreciate our work?");
+        std::process::exit(0); // TODO: Dynamically get the actual OS "ok" exit code
+    }
+
+    subcommand_handler(matches);
+}
+
+fn subcommand_handler(matches: clap::ArgMatches) {
+    match matches.subcommand() {
+        Some(("kiosk", kiosk_args)) => {
+            match kiosk_args.subcommand() {
+                Some(("registration", _registration_args)) => {
+                    info!("Starting kiosk in registration mode!");
+                    registration::registration();
+                },
+
+                Some(("checkpoint", _checkpoint_args)) => {
+                    info!("Starting kiosk in checkpoint mode!");
+                    checkpoint::checkpoint();
+                },
+
+                _ => unreachable!(),
+            }
+        },
+
+        _ => unreachable!(),
+    }
+}
