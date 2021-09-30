@@ -1,10 +1,15 @@
-pub mod registration;
-pub mod checkpoint;
+#[macro_use]
+extern crate lazy_static;
+
+pub mod kiosk;
 pub mod config;
+pub mod multicast;
 pub mod dispatch;
 
 use clap::{Arg, App, AppSettings};
 use log::{trace, info};
+
+use config::ConfigurationFile;
 
 use std::path::PathBuf;
 
@@ -24,13 +29,7 @@ async fn main() {
             .default_value("/etc/slados.d/config.toml")
             .takes_value(true))
         .subcommand(App::new("kiosk")
-            .about("Run as a kiosk. Pretty much the only option.")
-            .setting(AppSettings::SubcommandRequired)
-            .subcommand(App::new("registration")
-                .about("A registration kiosk."))
-            .subcommand(App::new("checkpoint")
-                .about("A kiosk to keep track of attendance. A checkpoint."))
-            )
+            .about("Run as a kiosk. Pretty much the only option. Deals both with registration and attendance."))
         .get_matches();
 
     info!("Reading configuration file");
@@ -43,25 +42,13 @@ async fn main() {
         std::process::exit(0); // TODO: Dynamically get the actual OS "ok" exit code
     }
 
-    subcommand_handler(matches);
+    subcommand_handler(matches, config);
 }
 
-fn subcommand_handler(matches: clap::ArgMatches) {
+fn subcommand_handler(matches: clap::ArgMatches, config: ConfigurationFile) {
     match matches.subcommand() {
-        Some(("kiosk", kiosk_args)) => {
-            match kiosk_args.subcommand() {
-                Some(("registration", _registration_args)) => {
-                    info!("Starting kiosk in registration mode!");
-                    registration::registration();
-                },
-
-                Some(("checkpoint", _checkpoint_args)) => {
-                    info!("Starting kiosk in checkpoint mode!");
-                    checkpoint::checkpoint();
-                },
-
-                _ => unreachable!(),
-            }
+        Some(("kiosk", _)) => {
+            kiosk::kiosk(config);
         },
 
         _ => unreachable!(),

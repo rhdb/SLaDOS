@@ -24,14 +24,14 @@ pub async fn powered_dispatch(bind_on: String) -> Result<(), Box<dyn std::error:
                     Ok(n) if n == 0 => return,
                     Ok(n) => n,
                     Err(e) => {
-                        error!("Failed to read from socket; err = {:?}", e);
+                        error!("Failed to read from socket. {:?}", e);
                         return;
                     }
                 };
 
                 // Write the data back
                 if let Err(e) = socket.write_all(&buf[0..n]).await {
-                    error!("Failed to write to socket; err = {:?}", e);
+                    error!("Failed to write to socket. {:?}", e);
                     return;
                 }
             }
