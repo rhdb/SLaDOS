@@ -3,6 +3,8 @@ use super::multicast;
 
 pub fn kiosk(config: ConfigurationFile) {
     // First, listen for a lead node (on multicast)
-    multicast::multicast_listener(config.ip_version);
+    let multicast_listener_thread = multicast::multicast_listener(config.ip_version);
+
+    multicast_listener_thread.join().unwrap();
 }
 

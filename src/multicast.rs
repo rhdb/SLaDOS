@@ -12,10 +12,11 @@ use log::{trace, debug, info, error};
 pub const PORT: u16 = 7645;
 lazy_static! {
     /// Multicast IPv4 address
-    pub static ref IPV4: IpAddr = Ipv4Addr::new(224, 0, 0, 123).into();
+    pub static ref IPV4: IpAddr = Ipv4Addr::new(224, 0, 0, 69).into();
 
     /// Multicast IPv6 address (technically this is unneeded because Alan disabled IPv6 because of
-    /// a rouge DHCP server)
+    /// a rouge DHCP server. Don't know why they don't just go over the logs... Are they hiding
+    /// something?)
     pub static ref IPV6: IpAddr = Ipv6Addr::new(0xFF02, 0, 0, 0, 0, 0, 0, 0x0123).into();
 }
 
@@ -31,7 +32,9 @@ fn create_socket(addr: &SocketAddr) -> Result<Socket, io::Error> {
 
     // We're going to use read timeouts so that we don't hang waiting for packets.
     // This is 'merica; we want (need!) it NOW!!!
-    socket.set_read_timeout(Some(Duration::from_millis(100)))?;
+    // NOTE: This line of code cost me about half an hour, because I forgot that
+    // NOTE: this will obviously raise OSE 35.
+    // socket.set_read_timeout(Some(Duration::from_millis(100)))?;
 
     Ok(socket)
 }

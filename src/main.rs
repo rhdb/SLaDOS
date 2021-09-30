@@ -1,3 +1,6 @@
+#[cfg(not(unix))]
+compile_error!("SLaDOS cannot run on anything but a UNIX machine, due to the authors lazyness.");
+
 #[macro_use]
 extern crate lazy_static;
 
