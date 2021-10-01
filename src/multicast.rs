@@ -1,11 +1,10 @@
 use std::net::{UdpSocket, IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::io;
-use std::time::Duration;
 use std::thread::JoinHandle;
 
 use super::config::IpVersion;
 
-use socket2::{Domain, Protocol, Socket, Type};
+use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use log::{trace, debug, info, error};
 
 /// The port to use for multicast
@@ -18,6 +17,13 @@ lazy_static! {
     /// a rouge DHCP server. Don't know why they don't just go over the logs... Are they hiding
     /// something?)
     pub static ref IPV6: IpAddr = Ipv6Addr::new(0xFF02, 0, 0, 0, 0, 0, 0, 0x0123).into();
+}
+
+fn get_addr(ipv: IpVersion) -> SocketAddr {
+    SocketAddr::new(match ipv {
+        IpVersion::V4 => *IPV4,
+        IpVersion::V6 => *IPV6,
+    }, PORT)
 }
 
 /// Creates a socket based on the address passed in.
@@ -73,10 +79,7 @@ fn join_multicast(addr: &SocketAddr) -> Result<UdpSocket, io::Error> {
 /// Pretty self explanitory. Spawns a thread that serves to listen
 /// to multicast.
 pub fn multicast_listener(ipv: IpVersion) -> JoinHandle<()> {
-    let addr = SocketAddr::new(match ipv {
-        IpVersion::V4 => *IPV4,
-        IpVersion::V6 => *IPV6,
-    }, PORT);
+    let addr = get_addr(ipv);
 
     debug!("Starting the SLaDOS Multicast Listener thread....");
 
@@ -105,6 +108,33 @@ pub fn multicast_listener(ipv: IpVersion) -> JoinHandle<()> {
         }).unwrap();
 
     join_handle
+}
+
+/// Creates a new multicast sender.
+pub fn new_sender(ipv: IpVersion) -> io::Result<(UdpSocket, SocketAddr)> {
+    let addr = get_addr(ipv);
+    let socket = create_socket(&addr)?;
+
+    if addr.is_ipv4() {
+        socket.set_multicast_if_v4(&Ipv4Addr::new(0, 0, 0, 0))?;
+
+        socket.bind(&SockAddr::from(SocketAddr::new(
+            Ipv4Addr::new(0, 0, 0, 0).into(),
+            0,
+        )))?;
+    } else {
+        // TODO: Autodetect or add a config entry considering the IPv6 interface number.
+        // NOTE: This might be specific to my computer.
+        socket.set_multicast_if_v6(5)?;
+
+        socket.bind(&SockAddr::from(SocketAddr::new(
+            Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0).into(),
+            0,
+        )))?;
+    }
+
+    // convert to standard sockets...
+    Ok((socket.into_udp_socket(), addr))
 }
 
 /// Test if the IPv4 address is, in fact, multicast capable

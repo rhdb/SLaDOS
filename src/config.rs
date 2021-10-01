@@ -13,14 +13,18 @@ pub struct ConfigurationFile {
     pub enabled: bool,
 
     /// The host to bind on.
-    #[serde(default = "default_host")]
-    pub host: String,
+    // #[serde(default = "default_host")]
+    // pub host: String,
 
     /// Assume that there is a preexisting network
     /// (e.g. don't become a lead node if there is none
     /// existing)
     #[serde(default = "default_assume_preexisting")]
     pub assume_preexisting: bool,
+
+    /// Assume we should just assume the host duty
+    #[serde(default = "default_assume_host")]
+    pub default_as_host: bool,
 
     /// If we should scan for a lead node, or
     /// just use the built in option.
@@ -43,8 +47,8 @@ pub enum IpVersion {
 /// The default value of enabled
 fn default_enabled() -> bool { true }
 
-/// The default value of the host
-fn default_host() -> String { "127.0.0.1:9010".to_owned() } // TODO: Dynamically get the outward facing IP
+/// The default value for default_as_host
+fn default_assume_host() -> bool { false }
 
 /// The default value for the assume preexinsting value
 fn default_assume_preexisting() -> bool { false }
