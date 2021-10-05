@@ -12,7 +12,7 @@ pub struct ConfigurationFile {
     #[serde(default = "default_enabled")]
     pub enabled: bool,
 
-    /// The host to bind on.
+    // /// The host to bind on.
     // #[serde(default = "default_host")]
     // pub host: String,
 
@@ -33,7 +33,11 @@ pub struct ConfigurationFile {
 
     /// Should use IPv4 or IPv6
     #[serde(default = "default_ip_version")]
-    pub ip_version: IpVersion
+    pub ip_version: IpVersion,
+
+    /// How often to send a lead discovery packet, in seconds
+    #[serde(default = "default_discovery_send_wait")]
+    pub discovery_send_wait: u64,
 }
 
 /// The mode of operation that SLaDOS should run in
@@ -58,6 +62,9 @@ fn default_builtin_lead() -> Option<String> { None }
 
 /// The default IP Protocol (RAS Syndrome) version
 fn default_ip_version() -> IpVersion { IpVersion::V4 }
+
+/// The default time to wait between sending discovery packets
+fn default_discovery_send_wait() -> u64 { 60 }
 
 /* fn deserialize_operation_mode<D>(de: &mut D) -> Result<OperationMode, D::Error>
     where D: Deserializer

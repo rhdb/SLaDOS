@@ -4,13 +4,15 @@ compile_error!("SLaDOS cannot run on anything but a UNIX machine, due to the aut
 #[macro_use]
 extern crate lazy_static;
 
+pub mod quote;
 pub mod kiosk;
 pub mod config;
 pub mod multicast;
 pub mod dispatch;
 
+use rand::prelude::SliceRandom;
 use clap::{Arg, App, AppSettings};
-use log::{trace, info};
+use log::{trace, info, warn};
 
 use config::ConfigurationFile;
 
@@ -39,6 +41,8 @@ async fn main() {
     let config = config::parse_config_file(PathBuf::from(matches.value_of("config").unwrap())).expect("woops");
 
     trace!("Configuration data: {:?}", config);
+
+    warn!("{}", quote::QUOTES.choose(&mut rand::thread_rng()).unwrap());
 
     if ! config.enabled {
         info!("Stopping the entire show, because you wanted us to. Don't you apreciate our work?");
