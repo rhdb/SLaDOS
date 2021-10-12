@@ -36,7 +36,11 @@ pub struct ConfigurationFile {
 /// Dedicated to client configuration values.
 #[derive(Deserialize, PartialEq, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct ServerConfig { }
+pub struct ServerConfig {
+    /// The location of the s2id database.
+    #[serde(default = "default_s2id")]
+    pub s2id: String,
+}
 
 /// A subset of the main configuration struct.
 /// Dedicated to client configuration values.
@@ -51,6 +55,9 @@ pub enum IpVersion {
     V4,
     V6,
 }
+
+/// The default location of the s2id database
+fn default_s2id() -> String { "/var/lib/persistant_s2id.json".to_owned() }
 
 /// The default value of enabled
 fn default_enabled() -> bool { true }

@@ -1,7 +1,7 @@
 <p align="center">
 <h1>SLaDOS</h1>
-<h3>Standardised Logging and Decentralized student-Observation System</h3>
-<p>A decentralized solution for the registration of NFC cards, and compilation and collection of attendance information.</p>
+<h3>Standardised Logging and non-Decentralized student-Observation System</h3>
+<p>A non-decentralized solution for the registration of NFC cards, and compilation and collection of attendance information.</p>
 </p>
 
 # Building
