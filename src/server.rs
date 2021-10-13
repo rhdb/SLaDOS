@@ -47,7 +47,11 @@ pub async fn server(config: ConfigurationFile) {
     };
 
     let serial_to_id: Arc<Mutex<HashMap<u32, u32>>> = Arc::from(Mutex::from(initial_db));
-    let bind_on = (config.host + ":" + &config.port.to_string()).parse().unwrap();
+    let bind_on = match (config.host + ":" + &config.port.to_string()).parse() {
+        Ok(a) => a,
+        Err(e) => { error!("Failed to parse socket address. {}", e); return; }
+    };
+
     let service = make_service_fn(move |_| {
         let db = serial_to_id.clone();
         let s2id = server_config.s2id.clone();
@@ -55,6 +59,8 @@ pub async fn server(config: ConfigurationFile) {
         async move {
             // async block is only executed once, so just pass it on to the closure
             Ok::<_, hyper::Error>(service_fn(move |req| {
+                // Cloning DB here is not nearly as memory hungry as it seems;
+                // it's an Arc, so we don't have to worry.
                 let db = db.clone();
                 let s2id = s2id.clone();
 
@@ -87,27 +93,27 @@ async fn client_dispatch(req: Request<Body>, db: Arc<Mutex<HashMap<u32, u32>>>, 
         ))),
 
         (&Method::GET, "/s2id") => {
-            let uri: SerialToId = match serde_qs::from_str(req.uri().query().unwrap()) {
+            let uri: SerialToId = match serde_qs::from_str(req.uri().query().unwrap_or("")) {
                 Ok(u) => u,
                 Err(e) => {
                     error!("Failed to parse query string. {}", e);
-                    return Ok(Response::builder().status(StatusCode::BAD_REQUEST).body(Body::empty()).unwrap());
+                    return Ok(Response::builder().status(StatusCode::BAD_REQUEST).body(Body::from("Bad request")).unwrap());
                 }
             };
 
             // Do we actually have that s2id on record?
             // There must be a response for insuffient data, but I can't find it.
             // But what do I know? I'm *just a teapot*.
-            if ! db.contains_key(&uri.serial) { return Ok(Response::builder().status(StatusCode::IM_A_TEAPOT).body(Body::empty()).unwrap()) }
+            if ! db.contains_key(&uri.serial) { return Ok(Response::builder().status(StatusCode::IM_A_TEAPOT).body(Body::from("Data not available")).unwrap()) }
             Ok(Response::new(Body::from(format!(r#"{{"id": {}}}"#, db.get(&uri.serial).unwrap()))))
         },
 
         (&Method::POST, "/s2id") => {
-            let uri: IdToSerial = match serde_qs::from_str(req.uri().query().unwrap()) {
+            let uri: IdToSerial = match serde_qs::from_str(req.uri().query().unwrap_or("")) {
                 Ok(u) => u,
                 Err(e) => {
                     error!("Failed to parse query string. {}", e);
-                    return Ok(Response::builder().status(StatusCode::BAD_REQUEST).body(Body::empty()).unwrap());
+                    return Ok(Response::builder().status(StatusCode::BAD_REQUEST).body(Body::from("Bad request")).unwrap());
                 }
             };
 
