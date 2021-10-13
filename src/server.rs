@@ -34,6 +34,7 @@ pub async fn server(config: ConfigurationFile) {
             Err(e) => { error!("Failed to create persistant s2id database. {}", e); return; }
         };
 
+        // NOTE: Shouldn't ever fail
         fs::write(&server_config.s2id, "{}").unwrap();
     }
 
@@ -62,10 +63,19 @@ pub async fn server(config: ConfigurationFile) {
         }
     });
 
-    let server = Server::bind(&bind_on).serve(service);
+    let server = match Server::try_bind(&bind_on) {
+        Ok(s) => s,
+        Err(e) => { error!("Failed to bind on {}. {}", &bind_on, e); return; }
+    }.serve(service);
     info!("Listening on http://{}", bind_on);
 
-    server.await.unwrap();
+    match server.await {
+        Ok(()) => (),
+        Err(e) => {
+            error!(
+                "The server (Hyper) encountered a error, mistake, misconception, delusion, inaccuracy, miscalculation, blunder, fault, flaw, oversight, or misprint. {}", e);
+            return; },
+    };
 }
 
 async fn client_dispatch(req: Request<Body>, db: Arc<Mutex<HashMap<u32, u32>>>, persistant: String) -> Result<Response<Body>, hyper::Error> {
@@ -88,7 +98,7 @@ async fn client_dispatch(req: Request<Body>, db: Arc<Mutex<HashMap<u32, u32>>>, 
             // Do we actually have that s2id on record?
             // There must be a response for insuffient data, but I can't find it.
             // But what do I know? I'm *just a teapot*.
-            if db.contains_key(&uri.serial) { return Ok(Response::builder().status(StatusCode::IM_A_TEAPOT).body(Body::empty()).unwrap()) }
+            if ! db.contains_key(&uri.serial) { return Ok(Response::builder().status(StatusCode::IM_A_TEAPOT).body(Body::empty()).unwrap()) }
             Ok(Response::new(Body::from(format!(r#"{{"id": {}}}"#, db.get(&uri.serial).unwrap()))))
         },
 
