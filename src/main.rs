@@ -1,3 +1,4 @@
+pub mod nfc;
 pub mod quote;
 pub mod kiosk;
 pub mod server;
@@ -61,7 +62,7 @@ async fn subcommand_handler(matches: clap::ArgMatches, config: ConfigurationFile
                 return;
             }
 
-            kiosk::kiosk(config);
+            kiosk::kiosk(config).await;
         },
 
         Some(("server", _)) => {
