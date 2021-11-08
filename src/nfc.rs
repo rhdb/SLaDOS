@@ -1,7 +1,7 @@
-// Read from the NFC hat. The serial number that's
-// been read is probably a u64, but if it's not,
-// change it.
-pub fn read_nfc() -> u64 {
-    0
-}
+// Code here to run nfc.c
 
+pub fn nfc() -> i64 {
+    // read nfc with nfc.c and set variable to result
+    let serial-num = 5;
+    serial-num
+}
