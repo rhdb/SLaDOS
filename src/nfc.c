@@ -35,7 +35,7 @@ int main(int argc, const char *argv[]){
 
     if (nfc_initiator_select_passive_target(nfchat, cardpoll, NULL, 0, &idcard) > 0) {
         printf("NFC card UID:", idcard.nti.nai.abtUid);
+        int UID = idcard.nti.nai.abtUid;
     }
-    
 
 }
